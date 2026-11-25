@@ -9,6 +9,7 @@ import {
   orphanAlleles,
   parseDistribution,
   parseGene,
+  planSync,
   snapshot,
 } from './rules.js';
 
@@ -118,6 +119,55 @@ async function removeGene(env, name, actor) {
   await history(env.DB, actor, 'gene.removed', { detail: { name } }).run();
   await publishAll(env);
   return ok({ removed: name });
+}
+
+// Sync with the genes found in the deployed code (called by the site's deploy pipeline, TASK-70.16).
+// Body: { genes: [{ name, alleles: [label] }], dry_run? }. Conflicts are reported, never applied.
+async function syncGenes(env, request, actor) {
+  const { genes, dry_run = false } = (await body(request)) ?? {};
+  const db = env.DB;
+  const { results } = await db
+    .prepare(
+      `SELECT g.name, COUNT(a.idx) AS alleles, g.removed_at IS NOT NULL AS removed
+       FROM genes g JOIN alleles a ON a.gene = g.name GROUP BY g.name`,
+    )
+    .all();
+  const plan = planSync(genes, results.map((r) => ({ ...r, removed: Boolean(r.removed) })));
+  const changed = plan.create.length + plan.add_alleles.length + plan.remove.length > 0;
+  if (dry_run || !changed) return ok({ dry_run, changed: false, ...plan });
+
+  const stmts = [];
+  for (const g of plan.create) {
+    stmts.push(
+      db.prepare('INSERT INTO genes (name, description) VALUES (?, ?)').bind(g.name, g.description),
+      ...g.alleles.map((label, idx) =>
+        db.prepare('INSERT INTO alleles (gene, idx, label) VALUES (?, ?, ?)').bind(g.name, idx, label),
+      ),
+      // A deployed gene already branches the code, so every live species gets it with the default allele 0.
+      db
+        .prepare(`INSERT INTO species_alleles (species_id, gene, allele) SELECT id, ?, 0 FROM species WHERE extinct_at IS NULL`)
+        .bind(g.name),
+      history(db, actor, 'gene.created', { detail: { ...g, via: 'sync' } }),
+    );
+  }
+  for (const a of plan.add_alleles) {
+    stmts.push(
+      ...a.labels.map((label, i) =>
+        db.prepare('INSERT INTO alleles (gene, idx, label) VALUES (?, ?, ?)').bind(a.gene, a.from + i, label),
+      ),
+      history(db, actor, 'gene.alleles_added', { detail: { ...a, via: 'sync' } }),
+    );
+  }
+  for (const name of plan.remove) {
+    stmts.push(
+      db.prepare(`UPDATE genes SET removed_at = datetime('now') WHERE name = ? AND removed_at IS NULL`).bind(name),
+      history(db, actor, 'gene.removed', { detail: { name, via: 'sync' } }),
+    );
+  }
+  await db.batch(stmts);
+  await publishAll(env);
+  const p = await (await pool(env)).json();
+  return ok({ dry_run, changed: true, ...plan, orphans: p.orphans });
 }
 
 async function listSpecies(env, url) {
@@ -241,6 +291,7 @@ async function route(request, env) {
   if (res === 'genes') {
     if (!id && m === 'GET') return ok(await liveGenes(env.DB));
     if (!id && m === 'POST') return createGene(env, request, actor);
+    if (id === 'sync' && !sub && m === 'POST') return syncGenes(env, request, actor);
     if (id && !sub && m === 'DELETE') return removeGene(env, id, actor);
   }
   if (res === 'species') {

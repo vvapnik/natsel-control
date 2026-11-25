@@ -89,3 +89,42 @@ export function snapshot(population, rows, genotypes) {
       .map((r) => ({ id: r.species_id, share_bp: r.share_bp, dna: dnaPayload(genotypes[r.species_id]) })),
   };
 }
+
+/**
+ * Plans a sync of the gene pool with the genes found in the deployed code (TASK-70.16).
+ * `scanned` is `[{ name, alleles: [label] }]` from the build scanner; `known` is `[{ name, alleles: n, removed }]`
+ * of every gene ever registered. Code is the source of truth, but the history is not rewritten:
+ * - a gene new to the pool is created;
+ * - a live gene with more alleles in the code gets the new alleles appended;
+ * - a live gene missing from the code is marked removed;
+ * - conflicts are reported and not applied: fewer alleles than registered (alleles are never renumbered)
+ *   and a removed gene name back in the code (gene names are never reused).
+ */
+export function planSync(scanned, known) {
+  if (!Array.isArray(scanned) || scanned.length === 0) {
+    throw bad('no genes in the scan; refusing to remove every gene (use DELETE /api/genes/:name)');
+  }
+  const genes = scanned.map((g) => parseGene(g));
+  const names = new Set();
+  for (const g of genes) {
+    if (names.has(g.name)) throw bad(`gene ${g.name} is listed twice`);
+    names.add(g.name);
+  }
+  const byName = new Map(known.map((k) => [k.name, k]));
+  const plan = { create: [], add_alleles: [], remove: [], conflicts: [] };
+  for (const g of genes) {
+    const k = byName.get(g.name);
+    if (!k) plan.create.push(g);
+    else if (k.removed) plan.conflicts.push({ gene: g.name, reason: 'gene was removed; gene names are never reused' });
+    else if (g.alleles.length > k.alleles) {
+      plan.add_alleles.push({ gene: g.name, from: k.alleles, labels: g.alleles.slice(k.alleles) });
+    } else if (g.alleles.length < k.alleles) {
+      plan.conflicts.push({
+        gene: g.name,
+        reason: `code has ${g.alleles.length} alleles, the pool ${k.alleles}; alleles are never renumbered`,
+      });
+    }
+  }
+  for (const k of known) if (!k.removed && !names.has(k.name)) plan.remove.push(k.name);
+  return plan;
+}

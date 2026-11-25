@@ -23,6 +23,7 @@ the Breeder only executes it.
 |---|---|---|
 | GET | `/api/pool` | live genes, species count, orphan alleles |
 | GET, POST | `/api/genes` | list; register `{ name, description?, alleles: [labels] }` |
+| POST | `/api/genes/sync` | sync with the genes in the deployed code `{ genes: [{ name, alleles }], dry_run? }`: creates new genes, appends new alleles, marks genes missing from the code removed; conflicts (fewer alleles, a removed name back) are reported, not applied; an empty list is refused |
 | DELETE | `/api/genes/:name` | remove a gene (fixed or extinct) |
 | GET, POST | `/api/species` | list (`?all=1` with extinct); create `{ name?, parent_id?, alleles: { gene: allele } }` |
 | POST | `/api/species/:id/extinct` | extinction |

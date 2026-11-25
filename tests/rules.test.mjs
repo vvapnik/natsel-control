@@ -35,3 +35,32 @@ test('orphanAlleles finds alleles not carried by any live species', () => {
 test('dnaPayload sorts genes', () => {
   assert.equal(dnaPayload({ 'status.cta': 1, 'hero.cta': 0 }), 'hero.cta=0;status.cta=1');
 });
+
+test('planSync: create, add alleles, remove, conflicts', async () => {
+  const { planSync } = await import('../src/rules.js');
+  const known = [
+    { name: 'a.same', alleles: 2, removed: false },
+    { name: 'a.grow', alleles: 2, removed: false },
+    { name: 'a.shrink', alleles: 3, removed: false },
+    { name: 'a.gone', alleles: 2, removed: false },
+    { name: 'a.old', alleles: 2, removed: true },
+  ];
+  const scanned = [
+    { name: 'a.same', alleles: ['x', 'y'] },
+    { name: 'a.grow', alleles: ['x', 'y', 'z'] },
+    { name: 'a.shrink', alleles: ['x', 'y'] },
+    { name: 'a.old', alleles: ['x', 'y'] },
+    { name: 'b.new', alleles: ['x', 'y'], sources: ['index.html'] },
+  ];
+  const plan = planSync(scanned, known);
+  assert.deepEqual(plan.create.map((g) => g.name), ['b.new']);
+  assert.deepEqual(plan.add_alleles, [{ gene: 'a.grow', from: 2, labels: ['z'] }]);
+  assert.deepEqual(plan.remove, ['a.gone']);
+  assert.deepEqual(plan.conflicts.map((c) => c.gene), ['a.shrink', 'a.old']);
+});
+
+test('planSync refuses an empty scan and duplicates', async () => {
+  const { planSync } = await import('../src/rules.js');
+  assert.throws(() => planSync([], [{ name: 'a.b', alleles: 2, removed: false }]), /refusing/);
+  assert.throws(() => planSync([{ name: 'a.b', alleles: ['x', 'y'] }, { name: 'a.b', alleles: ['x', 'y'] }], []), /twice/);
+});
