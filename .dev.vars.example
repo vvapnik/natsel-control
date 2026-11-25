@@ -1,2 +1,4 @@
-# Local dev only: skip the Cloudflare Access check. Never set this in production.
+# Local dev. Either skip authentication entirely...
 ACCESS_DISABLED=1
+# ...or test the bearer token: comment the line above and set
+# API_TOKEN=local-dev-token

@@ -1,4 +1,4 @@
-// Cloudflare Access: every request must carry a valid `Cf-Access-Jwt-Assertion` for our application.
+// Cloudflare Access (optional): every request must carry a valid `Cf-Access-Jwt-Assertion` for our application.
 // https://developers.cloudflare.com/cloudflare-one/identity/authorization-cookie/validating-json/
 
 import { HttpError } from './rules.js';

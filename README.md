@@ -2,7 +2,8 @@
 
 Control Plane of [natsel](https://github.com/vvapnik/natsel) (POC): the gene pool, species and populations
 live in Cloudflare D1; every change of a traffic distribution is published to Workers KV, where the
-Breeder reads it on the edge. The API is a Cloudflare Worker behind Cloudflare Access.
+Breeder reads it on the edge. The API is a Cloudflare Worker protected by a bearer token
+(`Authorization: Bearer <API_TOKEN>`); Cloudflare Access can replace the token later.
 
 The Control Plane decides the distribution of traffic between species for each population;
 the Breeder only executes it.
@@ -51,8 +52,15 @@ npm run dev
 npm test
 ```
 
-Deploy: create the D1 database and KV namespace, put their ids into `wrangler.jsonc`, set
-`ACCESS_TEAM_DOMAIN` and `ACCESS_AUD` of the Access application, then `npm run migrate:remote && npm run deploy`.
-Without Access settings the Worker refuses every request.
+Deploy: create the D1 database and KV namespace, put their ids into `wrangler.jsonc`, then
+
+```bash
+npx wrangler secret put API_TOKEN   # e.g. the output of: openssl rand -base64 32
+npm run migrate:remote
+npm run deploy
+```
+
+Optional Cloudflare Access: set `ACCESS_TEAM_DOMAIN` and `ACCESS_AUD` of the Access application; it then
+replaces the token. Without either the Worker refuses every request.
 
 natsel is developed with the help of Claude Code (Anthropic). License: MIT.

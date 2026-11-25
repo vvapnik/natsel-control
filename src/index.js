@@ -1,7 +1,7 @@
 // natsel Control Plane (POC): gene pool, species and populations in D1; traffic distributions
-// are published to KV, where the Breeder reads them. The API is behind Cloudflare Access.
+// are published to KV, where the Breeder reads them. The API needs a bearer token or Cloudflare Access.
 
-import { authenticate } from './access.js';
+import { authenticate } from './auth.js';
 import {
   HttpError,
   SLUG,

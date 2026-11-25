@@ -1,21 +1,22 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "natsel-control",
+  "account_id": "5e7bd5ed59e0631f6d1891aff755ad8f",
   "main": "src/index.js",
   "compatibility_date": "2026-11-01",
   "d1_databases": [
-    // Create with `wrangler d1 create natsel-control` and paste the id here.
-    { "binding": "DB", "database_name": "natsel-control", "database_id": "00000000-0000-0000-0000-000000000000", "migrations_dir": "migrations" }
+    { "binding": "DB", "database_name": "natsel-control", "database_id": "127d9fca-30e5-4f9f-9fb7-3312aba7e2cf", "migrations_dir": "migrations" }
   ],
   "kv_namespaces": [
     // Shared with the Breeder (TASK-70.8): it reads `population:<id>` keys.
-    { "binding": "DISTRIBUTIONS", "id": "00000000000000000000000000000000" }
+    { "binding": "DISTRIBUTIONS", "id": "58e5ae8dc1dc4863a4d46590bc669962" }
   ],
   "vars": {
-    // Cloudflare Access team domain (team.cloudflareaccess.com) and application AUD tag. Without them every request is refused.
+    // Optional Cloudflare Access (team.cloudflareaccess.com + AUD tag); when set, it replaces the API_TOKEN secret.
     "ACCESS_TEAM_DOMAIN": "",
     "ACCESS_AUD": ""
   },
+  "routes": [{ "pattern": "control.natsel.vapnik.de", "zone_name": "vapnik.de", "custom_domain": true }],
   "workers_dev": false,
   "preview_urls": false
 }
