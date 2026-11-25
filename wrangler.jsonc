@@ -1,0 +1,21 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "natsel-control",
+  "main": "src/index.js",
+  "compatibility_date": "2026-11-01",
+  "d1_databases": [
+    // Create with `wrangler d1 create natsel-control` and paste the id here.
+    { "binding": "DB", "database_name": "natsel-control", "database_id": "00000000-0000-0000-0000-000000000000", "migrations_dir": "migrations" }
+  ],
+  "kv_namespaces": [
+    // Shared with the Breeder (TASK-70.8): it reads `population:<id>` keys.
+    { "binding": "DISTRIBUTIONS", "id": "00000000000000000000000000000000" }
+  ],
+  "vars": {
+    // Cloudflare Access team domain (team.cloudflareaccess.com) and application AUD tag. Without them every request is refused.
+    "ACCESS_TEAM_DOMAIN": "",
+    "ACCESS_AUD": ""
+  },
+  "workers_dev": false,
+  "preview_urls": false
+}
