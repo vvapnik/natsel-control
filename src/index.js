@@ -1,7 +1,9 @@
 // natsel Control Plane (POC): gene pool, species and populations in D1; traffic distributions
-// are published to KV, where the Breeder reads them. The API needs a bearer token or Cloudflare Access.
+// are published to KV, where the Breeder reads them. The API needs a panel session, a bearer token or Cloudflare Access;
+// the panel itself is static assets in public/.
 
 import { authenticate } from './auth.js';
+import { login, logout } from './session.js';
 import {
   HttpError,
   SLUG,
@@ -201,7 +203,18 @@ async function createSpecies(env, request, actor) {
     ),
     history(db, actor, 'species.created', { species_id: id, detail: { parent_id, genotype } }),
   ]);
-  return ok({ id, name, parent_id, genotype }, 201);
+  return ok({ id, name, parent_id, genotype, status: 'draft' }, 201);
+}
+
+async function approveSpecies(env, id, actor) {
+  const db = env.DB;
+  const res = await db
+    .prepare(`UPDATE species SET approved_at = datetime('now'), approved_by = ? WHERE id = ? AND extinct_at IS NULL AND approved_at IS NULL`)
+    .bind(actor, id)
+    .run();
+  if (!res.meta.changes) throw new HttpError(409, `species ${id} is not a live draft`);
+  await history(db, actor, 'species.approved', { species_id: id }).run();
+  return ok({ approved: id });
 }
 
 async function extinctSpecies(env, id, actor) {
@@ -265,6 +278,12 @@ async function setDistribution(env, id, request, actor) {
   const live = await genotypes(db);
   const dead = rows.filter((r) => !live[r.species_id]).map((r) => r.species_id);
   if (dead.length) throw new HttpError(400, 'unknown or extinct species', dead);
+  const { results: drafts } = await db
+    .prepare(`SELECT id FROM species WHERE approved_at IS NULL AND id IN (${rows.map(() => '?').join(',')})`)
+    .bind(...rows.map((r) => r.species_id))
+    .all();
+  const blocked = drafts.map((d) => d.id).filter((sid) => rows.find((r) => r.species_id === sid).share_bp > 0);
+  if (blocked.length) throw new HttpError(409, 'draft species cannot get traffic; approve them first', blocked);
   await db.batch([
     db.prepare('DELETE FROM distributions WHERE population_id = ?').bind(id),
     ...rows.map((r) =>
@@ -282,11 +301,14 @@ async function setDistribution(env, id, request, actor) {
 
 async function route(request, env) {
   const url = new URL(request.url);
+  if (url.pathname === '/api/login' && request.method === 'POST') return login(request, env);
+  if (url.pathname === '/api/logout' && request.method === 'POST') return logout();
   const actor = await authenticate(request, env);
   const parts = url.pathname.replace(/^\/api\/?/, '').split('/').filter(Boolean).map(decodeURIComponent);
   const m = request.method;
   const [res, id, sub] = parts;
 
+  if (res === 'me' && !id && m === 'GET') return ok({ login: actor });
   if (res === 'pool' && !id && m === 'GET') return pool(env);
   if (res === 'genes') {
     if (!id && m === 'GET') return ok(await liveGenes(env.DB));
@@ -298,6 +320,7 @@ async function route(request, env) {
     if (!id && m === 'GET') return listSpecies(env, url);
     if (!id && m === 'POST') return createSpecies(env, request, actor);
     if (id && sub === 'extinct' && m === 'POST') return extinctSpecies(env, id, actor);
+    if (id && sub === 'approve' && m === 'POST') return approveSpecies(env, id, actor);
     if (id && sub === 'history' && m === 'GET') return speciesHistory(env, id);
   }
   if (res === 'populations') {

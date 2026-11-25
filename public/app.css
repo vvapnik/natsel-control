@@ -1,0 +1,78 @@
+:root { color-scheme: light dark; --bg: #f6f5f1; --card: #fff; --fg: #1d1d1b; --muted: #6d6b64; --accent: #2f7d4f; --err: #b3261e; --line: #dedbd2;
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+@media (prefers-color-scheme: dark) { :root { --bg: #151514; --card: #1f1f1d; --fg: #ecebe6; --muted: #9b998f; --accent: #5cc48a; --err: #f2b8b5; --line: #33322f; } }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); }
+[hidden] { display: none !important; }
+h1 { margin: 0 0 1.25rem; font-size: 1.5rem; }
+h1 span, .bar span:not(.spacer):not(#who) { color: var(--accent); font-weight: 500; }
+.login { min-height: 100vh; display: grid; place-items: center; padding: 1rem; }
+.card { width: min(22rem, 100%); background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 2rem; display: grid; gap: .9rem; }
+label { display: grid; gap: .3rem; font-size: .9rem; color: var(--muted); }
+input { font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: .55rem .7rem; }
+input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+button { font: inherit; font-weight: 600; border: 0; border-radius: 8px; padding: .6rem 1rem; background: var(--accent); color: #fff; cursor: pointer; }
+button:disabled { opacity: .6; cursor: wait; }
+button.ghost { background: transparent; color: var(--fg); border: 1px solid var(--line); font-weight: 500; }
+.error { margin: 0; min-height: 1.2em; color: var(--err); font-size: .9rem; }
+.bar { display: flex; align-items: center; gap: 1rem; padding: .8rem 1.5rem; background: var(--card); border-bottom: 1px solid var(--line); }
+.spacer { flex: 1; }
+#who, .muted { color: var(--muted); }
+.content { padding: 2rem 1.5rem; }
+
+/* ---------- panel ---------- */
+:root { --c0: #8a8780; --c1: #2f7d4f; --c2: #3b6fb6; --c3: #c0782b; --c4: #8a4fb0; --c5: #b6455b; }
+nav { display: flex; gap: .25rem; margin-left: 1rem; }
+nav a { color: var(--muted); text-decoration: none; padding: .35rem .75rem; border-radius: 8px; }
+nav a.active, nav a:hover { color: var(--fg); background: var(--bg); }
+.content { max-width: 1200px; margin: 0 auto; display: grid; gap: 1.25rem; }
+.head h2 { margin: 0; font-size: 1.6rem; }
+.head p { margin: .25rem 0 0; }
+h3 { margin: 0; font-size: 1.1rem; }
+.content .card { width: auto; padding: 1.25rem 1.5rem; gap: .75rem; }
+.row { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
+.small { font-size: .8rem; }
+.inline { display: flex !important; align-items: center; flex-wrap: wrap; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1rem; }
+.cols { display: grid; grid-template-columns: 1.3fr 1fr; gap: 1.25rem; align-items: start; }
+@media (max-width: 860px) { .cols { grid-template-columns: 1fr; } nav { margin-left: 0; } .bar { flex-wrap: wrap; } }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; }
+td, th { padding: .45rem .6rem; border-bottom: 1px solid var(--line); text-align: left; vertical-align: middle; }
+th { font-size: .8rem; color: var(--muted); font-weight: 500; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+.extinct { opacity: .45; }
+.shares td.grow { width: 60%; }
+.shares input[type=number] { width: 5.5rem; text-align: right; }
+input[type=range] { width: 100%; accent-color: var(--accent); }
+select { font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: .45rem .6rem; }
+.stack { display: flex; height: 2rem; border-radius: 8px; overflow: hidden; background: var(--bg); border: 1px solid var(--line); }
+.seg { display: grid; place-items: center; color: #fff; font-size: .8rem; font-weight: 600; transition: flex-basis .15s; min-width: 2px; }
+.sum { font-weight: 700; font-variant-numeric: tabular-nums; }
+.sum.bad { color: var(--err); }
+.c0, .a0 { background: var(--c0); } .c1, .a1 { background: var(--c1); } .c2, .a2 { background: var(--c2); }
+.c3, .a3 { background: var(--c3); } .c4, .a4 { background: var(--c4); } .c5, .a5 { background: var(--c5); }
+.allele { display: inline-grid; place-items: center; min-width: 1.6rem; height: 1.6rem; border-radius: 6px; color: #fff; font-weight: 700; font-size: .85rem; }
+.genotypes .cell { text-align: center; }
+.genotypes th:not(:first-child) { text-align: center; }
+.locus { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em; color: var(--accent); border: 1px solid var(--line); border-radius: 6px; padding: .1rem .45rem; }
+.alleles { list-style: none; margin: 0; padding: 0; display: grid; gap: .6rem; }
+.alleles li { display: grid; grid-template-columns: auto 1fr; gap: .2rem .7rem; align-items: center; }
+.alleles .carriers { grid-column: 2; display: flex; flex-wrap: wrap; gap: .3rem; }
+.alleles li.orphan .label::after { content: ' · orphan'; color: var(--err); font-size: .8rem; }
+.pill { font-size: .78rem; border: 1px solid var(--line); border-radius: 999px; padding: .05rem .55rem; color: var(--muted); }
+.warn { font-size: .8rem; color: var(--err); }
+.tree, .tree ul { list-style: none; margin: 0; padding-left: 1.1rem; border-left: 1px solid var(--line); }
+.tree { padding-left: 0; border: 0; }
+.tree li { padding: .35rem 0 .35rem .6rem; }
+.mut { display: inline-flex; align-items: center; gap: .3rem; margin-right: .6rem; color: var(--muted); }
+.mut .allele { min-width: 1.2rem; height: 1.2rem; font-size: .7rem; }
+button.small { padding: .3rem .7rem; font-size: .85rem; }
+#toast { position: fixed; bottom: 1.5rem; left: 50%; transform: translate(-50%, 2rem); opacity: 0; transition: .2s; background: var(--fg); color: var(--bg); padding: .7rem 1.1rem; border-radius: 10px; max-width: 90vw; pointer-events: none; }
+#toast.show { opacity: 1; transform: translate(-50%, 0); }
+#toast.err { background: var(--err); color: #fff; }
+.dot { display: inline-block; width: .7rem; height: .7rem; border-radius: 50%; margin-right: .45rem; }
+.badge { font-size: .7rem; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; color: var(--c3); border: 1px solid var(--c3); border-radius: 6px; padding: 0 .4rem; vertical-align: middle; }
+td.actions { white-space: nowrap; text-align: right; }
+td.actions button + button { margin-left: .4rem; }
+input:disabled { opacity: .4; cursor: not-allowed; }

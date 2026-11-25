@@ -3,6 +3,8 @@
   "name": "natsel-control",
   "account_id": "5e7bd5ed59e0631f6d1891aff755ad8f",
   "main": "src/index.js",
+  // The panel (public/) is served as static assets; the Worker only handles /api/*.
+  "assets": { "directory": "public", "not_found_handling": "single-page-application", "run_worker_first": ["/api/*"] },
   "compatibility_date": "2026-11-01",
   "d1_databases": [
     { "binding": "DB", "database_name": "natsel-control", "database_id": "127d9fca-30e5-4f9f-9fb7-3312aba7e2cf", "migrations_dir": "migrations" }
